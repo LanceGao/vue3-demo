@@ -28,7 +28,8 @@ watch(()=>store.channelId, async ()=>{
   articles.value = res.data.data.results
   // 初始化渲染图片
   nextTick(() => {
-    lazyLoadImgs()
+    // lazyLoadImgs()
+    intersectionObserverLazyImgs()
   })
 }, {
   immediate: true
@@ -57,23 +58,41 @@ const lazyLoadImgs = () => {
 
 // 节流操作
 const throttle = (fn: any, delay = 200) => {
-  let timer: number|null = null
+  let lastTime = 0
   return function(...args: any) {
-    if (!timer) {
+    let nowTime = Date.now()
+    if (nowTime - lastTime >= delay) {
       fn(...args)
-      timer = setTimeout(() => {
-        timer = null
-      }, delay)
+      lastTime = nowTime
     }
   }
 }
 
-const handleThrottle = throttle(lazyLoadImgs, 1200)
+const handleThrottle = throttle(lazyLoadImgs, 200)
 
 onMounted(() => {
   // 添加监听事件
   articleListRef.value.addEventListener('scroll', handleThrottle)
 })
+
+const lazyImgsObserver = new IntersectionObserver((entries, observer) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      let lazyImg = entry.target
+      let img = lazyImg  as HTMLImageElement
+      img.src = img.dataset.src || ''
+      lazyImg.classList.remove('lazy-img')
+      lazyImgsObserver.unobserve(lazyImg)
+    }
+  })
+  })
+
+const intersectionObserverLazyImgs = () => {
+  const lazyImgs = Array.from(document.querySelectorAll('.lazy-img'))
+  lazyImgs?.forEach(lazyImg => {
+    lazyImgsObserver.observe(lazyImg)
+  })
+}
 
 </script>
 
