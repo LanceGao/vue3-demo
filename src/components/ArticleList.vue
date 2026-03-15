@@ -16,7 +16,8 @@ const store = useChannelStore()
 
 const articles = ref<ArticleItem[]>([])
 const articleListRef = ref()
-const offset = 100
+const offset = 100 // 偏移量
+const distance = 100 // 偏移量
 watch(()=>store.channelId, async ()=>{
   // 更新后执行的函数
   const res = await axios.get<ArticleResData>('http://geek.itheima.net/v1_0/articles', {
@@ -28,8 +29,9 @@ watch(()=>store.channelId, async ()=>{
   articles.value = res.data.data.results
   // 初始化渲染图片
   nextTick(() => {
-    // lazyLoadImgs()
-    intersectionObserverLazyImgs()
+    // 图片懒加载-getBoundingClientRect()
+    lazyLoadImgs()
+    // intersectionObserverLazyImgs()
   })
 }, {
   immediate: true
@@ -68,11 +70,36 @@ const throttle = (fn: any, delay = 200) => {
   }
 }
 
+// 防抖
+const debounce = (fn: any, delay = 200) => {
+  let timer: any = null
+  return function(...args: any[]) {
+    timer && clearTimeout(timer)
+    timer = setTimeout(() => {
+      fn(...args)
+    }, delay)
+  }
+}
+
+const laodMoreData = (el: any) => {
+  let elClientH = el.target.clientHeight
+  let elScrollTop = el.target.scrollTop
+  let elScrollH = el.target.scrollHeight
+  console.log(elScrollH, elScrollTop, elClientH)
+  if ((elScrollTop + elClientH) >= (elScrollH - distance)) {
+    console.log('上拉加载数据')
+  }
+}
+
 const handleThrottle = throttle(lazyLoadImgs, 200)
+
+const handleLoadMore = debounce(laodMoreData, 200)
 
 onMounted(() => {
   // 添加监听事件
   articleListRef.value.addEventListener('scroll', handleThrottle)
+  // 上拉加载数据 
+  articleListRef.value.addEventListener('scroll', handleLoadMore)
 })
 
 const lazyImgsObserver = new IntersectionObserver((entries, observer) => {
@@ -102,7 +129,8 @@ const intersectionObserverLazyImgs = () => {
       <p class="title">{{ item.title }}</p>
       <img
         v-for="(img,i) in item.cover.images"
-        :key="i" class="img lazy-img"
+        :key="i"
+        class="img lazy-img"
         :data-src="img"
         alt=""
       >
