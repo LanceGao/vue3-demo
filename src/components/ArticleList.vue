@@ -19,7 +19,7 @@ const articleListRef = ref()
 const offset = 100 // 偏移量
 // 上拉加载文本
 const loadText = ref('')
-const distance = 100 // 偏移量
+const distance = 80 // 偏移量
 // 下拉刷新提示文本
 const pullText = ref('')
 watch(()=>store.channelId, async ()=>{
@@ -89,19 +89,19 @@ const loadMoreData = (el: any) => {
   let elClientH = el.target.clientHeight
   let elScrollTop = el.target.scrollTop
   let elScrollH = el.target.scrollHeight
-    loadText.value = '加载更多...'
   if ((elScrollTop + elClientH) >= (elScrollH - distance)) {
+    loadText.value = '加载更多...'
     console.log('上拉加载数据')
     loadText.value = '加载中...'
     setTimeout(() => {
      loadText.value = ''
-    })
+    }, 800)
   }
 }
 
 const handleThrottle = throttle(lazyLoadImgs, 200)
 
-const handleLoadMore = debounce(loadMoreData, 200)
+const handleLoadMore = debounce(loadMoreData, 300)
 
 // 下拉刷新
 const pullRefresh = () => {
@@ -130,9 +130,9 @@ const pullRefresh = () => {
   })
   // 监听touchend事件，将元素样式恢复
   articleListRef.value.addEventListener('touchend', function(el: any) {
-    pullText.value = '更新中...'
     articleListRef.value.style.transform = 'translateY(0px)'
-    articleListRef.value.style.translate = 'transform 0.5s ease 1s'
+    articleListRef.value.style.transition = 'transform 0.5s ease 1s'
+    // pullText.value = '更新中...'
     setTimeout(() => {
       pullText.value = ''
     }, 800)
@@ -142,10 +142,16 @@ const pullRefresh = () => {
 
 
 onMounted(() => {
+
+  window.addEventListener('DOMContentLoaded', function() {
+      console.log('first contentful paint')
+  })
+  const fcp = performance.getEntriesByName('first-contentful-paint')[0]
+  console.log('fcp', fcp)
   // 添加监听事件
   articleListRef.value.addEventListener('scroll', handleThrottle)
   // 上拉加载数据 
-  articleListRef.value.addEventListener('scroll', handleLoadMore)
+  articleListRef.value.addEventListener('scroll', handleLoadMore, false)
   // 下拉刷新数据
   pullRefresh()
 })
@@ -160,7 +166,7 @@ const lazyImgsObserver = new IntersectionObserver((entries, observer) => {
       lazyImgsObserver.unobserve(lazyImg)
     }
   })
-  })
+})
 
 const intersectionObserverLazyImgs = () => {
   const lazyImgs = Array.from(document.querySelectorAll('.lazy-img'))
@@ -197,5 +203,9 @@ const intersectionObserverLazyImgs = () => {
 .pull-text {
   text-align: center;
   padding: 10px 0;
+}
+.load-text {
+  text-align: center;
+  padding: 20px 0;
 }
 </style>
