@@ -5,12 +5,43 @@
 // 3. channelId 改变列表更新，默认初始化就改发请求，使用 watch
 // 4. 列表数据声明，赋值，展示
 
+const state = reactive({
+  user: {
+    age: 18
+  }
+})
+const age = state.user.age
+state.user.age = 20
+console.log('age', age, state.user.age)
+
 import axios from 'axios';
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, watch, nextTick, onMounted, reactive, computed, onBeforeUnmount } from 'vue';
 import { useChannelStore } from '../stores/channel';
 import { ArticleItem, ArticleResData } from '../types/data'
 
 // const props = defineProps<{ channelId: number }>()
+// 倒计时功能
+let count = ref(3)
+let isSending = ref(false)
+let btnText = computed(() => isSending.value ? `${count.value}秒后重试` : '发送')
+let timer: any = null
+const btnHandle = () => {
+  if (isSending.value) return
+  isSending.value = true
+  timer = setInterval(() => {
+    if (count.value <= 1) {
+      clearInterval(timer)
+      isSending.value = false
+      count.value = 3
+      return
+    }
+    count.value--
+  }, 1000)
+}
+
+onBeforeUnmount(() => {
+  timer && clearInterval(timer)
+})
 
 const store = useChannelStore()
 
@@ -22,9 +53,11 @@ const loadText = ref('')
 const distance = 100 // 偏移量
 // 下拉刷新提示文本
 const pullText = ref('')
+
+
 watch(()=>store.channelId, async ()=>{
   // 更新后执行的函数
-  const res = await axios.get<ArticleResData>('http://geek.itheima.net/v1_0/articles', {
+  const res = await axios.get<ArticleResData>('/v1_0/articles', {
     params: {
       channel_id: store.channelId,
       timestamp: Date.now()
@@ -172,6 +205,10 @@ const intersectionObserverLazyImgs = () => {
 </script>
 
 <template>
+  <div>
+    <input>
+    <button @click="btnHandle">{{ btnText }}</button>
+  </div>
   <span class="pull-text" v-if="pullText">{{pullText}}</span>
   <div class="article-list" ref="articleListRef">
     <div class="article-item" v-for="item in articles" :key="item.art_id">

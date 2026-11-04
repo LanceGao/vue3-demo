@@ -11,7 +11,7 @@ import { ChannelItem, ChannelResData } from '../types/data';
 const channels = ref<ChannelItem[]>([])
 
 onMounted(async () => {
-  const res = await axios.get<ChannelResData>('http://geek.itheima.net/v1_0/channels')
+  const res = await axios.get<ChannelResData>('/v1_0/channels')
   channels.value = res.data.data.channels
 })
 

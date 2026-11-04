@@ -9,4 +9,12 @@ export default defineConfig({
       reactivityTransform: true
     }),
   ],
+  server: {
+    proxy: {
+      '/v1_0': {
+        target: 'http://geek.itheima.net',
+        changeOrigin: true,
+      },
+    },
+  },
 });
